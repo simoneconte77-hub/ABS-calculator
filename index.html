@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SRT Coupon &amp; RWA Analyzer — Contemade</title>
+<style>
+:root{
+  --bg:#000;--panel:#0a0a0a;--panel2:#111;--line:#3a2a00;--amber:#ffb000;--amber2:#ffcf66;
+  --orange:#ff6a00;--dim:#9a7418;--green:#19d27a;--red:#ff4d3d;--blue:#4ea1ff;--white:#e9e9e9;
+  --mono:"IBM Plex Mono","SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--amber2);font-family:var(--mono);font-size:13px}
+body{padding-bottom:40px}
+.topbar{background:var(--orange);color:#000;display:flex;align-items:center;justify-content:space-between;padding:6px 14px;font-weight:700;letter-spacing:.06em}
+.topbar .t{font-size:14px}.topbar .c{font-size:12px;font-weight:600}
+.fkeys{display:flex;flex-wrap:wrap;gap:2px;background:#1a1100;padding:4px 10px;border-bottom:1px solid var(--line)}
+.fkeys a{color:#000;background:var(--amber);padding:2px 10px;text-decoration:none;font-weight:700;font-size:11px}
+.fkeys a:hover{background:#fff}
+.wrap{max-width:1500px;margin:0 auto;padding:10px 12px}
+.panel{background:var(--panel);border:1px solid var(--line);margin-bottom:12px}
+.panel>h2{margin:0;background:#1d1400;color:var(--amber);font-size:12px;letter-spacing:.12em;padding:5px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.panel>h2 span.k{color:var(--orange)}
+.body{padding:10px}
+.grid{display:grid;gap:10px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:1000px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.g4,.g3,.g2{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+label.f small{color:#6e5415;text-transform:none;letter-spacing:0}
+input,select,button{font-family:var(--mono);font-size:13px}
+input[type=text],input[type=number],select{background:#000;color:var(--white);border:1px solid #4a3600;padding:5px 6px;width:100%;outline:none}
+input:focus,select:focus{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber)}
+input[type=checkbox]{accent-color:var(--amber);width:16px;height:16px}
+.cb{display:flex;align-items:center;gap:8px;color:var(--amber2);font-size:12px;padding-top:16px}
+button{background:#1d1400;color:var(--amber);border:1px solid var(--amber);padding:5px 12px;cursor:pointer;font-weight:700;letter-spacing:.05em}
+button:hover{background:var(--amber);color:#000}
+button.sm{padding:2px 7px;font-size:11px}
+button.x{border-color:#6a2a20;color:var(--red)}button.x:hover{background:var(--red);color:#000}
+.seg{display:inline-flex}.seg button{border-radius:0;margin-right:-1px}.seg button.on{background:var(--amber);color:#000}
+table{width:100%;border-collapse:collapse}
+th{font-size:10px;color:var(--dim);text-align:right;text-transform:uppercase;letter-spacing:.07em;padding:4px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td{padding:3px 5px;border-bottom:1px solid #1c1400;text-align:right;white-space:nowrap}
+tbody tr:hover{background:#140e00}
+td input,td select{padding:3px 5px;font-size:12px}
+.tbl{overflow-x:auto}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);background:var(--panel2);padding:8px 10px}
+.kpi .l{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.kpi .v{font-size:22px;color:var(--amber);font-weight:700;margin-top:2px}
+.kpi .s{font-size:11px;color:#a58230;margin-top:2px}
+.kpi.hl{border-color:var(--orange)}.kpi.hl .v{color:#fff}
+.pos{color:var(--green)}.neg{color:var(--red)}
+.sec{color:var(--orange);font-size:11px;letter-spacing:.14em;margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:3px}
+.warn{border-left:3px solid var(--red);background:#1a0a08;color:#ff9a8f;padding:5px 9px;margin:4px 0;font-size:12px}
+.info{border-left:3px solid var(--blue);background:#07121d;color:#9cc9f5;padding:5px 9px;margin:4px 0;font-size:12px}
+.ok{border-left:3px solid var(--green);background:#06150d;color:#8ee6b6;padding:5px 9px;margin:4px 0;font-size:12px}
+.badge{display:inline-block;border:1px solid var(--orange);color:var(--orange);padding:1px 7px;font-size:11px;letter-spacing:.05em}
+.bar{display:flex;height:54px;border:1px solid var(--line);margin-top:6px}
+.bar .sg{display:flex;flex-direction:column;border-right:1px solid #000;min-width:0;overflow:hidden;font-size:10px}
+.bar .sg .n{padding:2px 4px;background:#2a1d00;color:var(--amber);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .sg .m{flex:1;display:flex}
+.bar .sold{background:#7a5200}
+.bar .ret{background:repeating-linear-gradient(45deg,#0d5a3a,#0d5a3a 4px,#06361f 4px,#06361f 8px)}
+.legend{font-size:11px;color:var(--dim);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:10px;vertical-align:middle;margin:0 4px 0 10px}
+.note{font-size:12px;line-height:1.55;color:#d8bd7a}
+.note h3{color:var(--orange);font-size:12px;letter-spacing:.1em;margin:14px 0 4px}
+.note code{color:var(--white);background:#1a1200;padding:0 4px}
+.note ul{margin:4px 0 4px 18px;padding:0}
+footer{text-align:center;color:var(--dim);font-size:11px;margin-top:18px;letter-spacing:.1em}
+footer b{color:var(--orange)}
+@media print{.fkeys,button{display:none}}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="t">SRT &lt;GO&gt; &nbsp; COUPON &amp; RWA ANALYZER</div><div class="c"><span id="clock"></span> &nbsp;|&nbsp; CONTEMADE</div></div>
+<div class="fkeys">
+  <a href="#p-par">1 PARAMETRI</a><a href="#p-tr">2 TRANCHE</a><a href="#p-out">3 RISULTATI</a><a href="#p-det">4 DETTAGLIO</a><a href="#p-note">5 NOTA METODOLOGICA</a>
+</div>
+
+<div class="wrap">
+
+<div class="panel" id="p-par">
+  <h2><span>PARAMETRI OPERAZIONE</span><span class="k">SEC-ERBA / STANDARD APPROACH</span></h2>
+  <div class="body">
+    <div class="grid g4">
+      <label class="f">Portafoglio ceduto (€ mln)<input type="number" step="any" data-k="portfolio"></label>
+      <label class="f">RWA portafoglio — modalità
+        <select data-k="rwaMode"><option value="rw">Da RW medio %</option><option value="direct">RWA diretti (€ mln)</option></select></label>
+      <label class="f" id="f-rw">RW medio portafoglio (%)<input type="number" step="any" data-k="rw"><small>Metodo standard (es. 75% retail)</small></label>
+      <label class="f" id="f-rwad" style="display:none">RWA ante cartolarizzazione (€ mln)<input type="number" step="any" data-k="rwaDirect"></label>
+      <label class="f">WAL media portafoglio (anni)<input type="number" step="any" data-k="wal"><small><span class="badge">AMMORTAMENTO ATTESO: PRO-RATA</span></small></label>
+      <label class="f">Euribor di riferimento (%)<input type="number" step="any" data-k="euribor"><small>Base per le cedole a spread</small></label>
+      <label class="f">Target CET1 (%)<input type="number" step="any" data-k="cet1"><small>Può essere &gt; 8%</small></label>
+      <label class="f">Costo del capitale proprio Ke (%)<input type="number" step="any" data-k="ke"></label>
+      <label class="f">Costo atteso emissione, vendita 100% (%)<input type="number" step="any" data-k="c100" placeholder="auto = cedola media"><small>Vuoto = cedola media ponderata di tutte le classi</small></label>
+      <label class="f">Scala rating
+        <select data-k="scale"><option value="sp">S&amp;P / Fitch</option><option value="md">Moody's</option></select></label>
+      <label class="f">Unità size tranche
+        <select data-k="sizeMode"><option value="mln">€ mln</option><option value="pct">% del totale emesso</option></select></label>
+      <label class="f" id="f-tot" style="display:none">Totale emesso (€ mln)<input type="number" step="any" data-k="totalIssued"></label>
+      <div class="cb"><input type="checkbox" id="sts" data-k="sts"><label for="sts">Cartolarizzazione STS (art. 264 CRR)</label></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="p-tr">
+  <h2><span>STRUTTURA DELLE CLASSI</span><span class="k">ORDINE = SUBORDINAZIONE (1ª RIGA = PIÙ SENIOR)</span></h2>
+  <div class="body">
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th style="text-align:left">Classe</th><th id="th-size">Size</th><th>Rating</th><th>Tipo cedola</th><th id="th-cpn">Cedola</th><th>% ritenuta</th><th>Senior</th><th>MT (anni)</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="add">+ AGGIUNGI CLASSE</button><button id="reset" class="x">RIPRISTINA ESEMPIO</button>
+    </div>
+    <div class="info" style="margin-top:8px">Le classi con lo stesso prefisso alfabetico (A1, A2, A3 → gruppo «A») sono trattate come un'unica tranche pari passu per il calcolo di attachment/detachment e spessore. Ogni classe mantiene rating, cedola e % ritenuta propri. MT vuoto = WAL di portafoglio (con ammortamento pro-rata le tranche hanno la stessa vita media).</div>
+    <div id="warns"></div>
+  </div>
+</div>
+
+<div class="panel" id="p-out">
+  <h2><span>RISULTATI</span><span class="k" id="stamp"></span></h2>
+  <div class="body">
+    <div class="sec">STRUTTURA E CEDOLE MEDIE PONDERATE</div>
+    <div class="kpis" id="k-coupon"></div>
+    <div class="sec">RWA — METODO STANDARD / SEC-ERBA SULLE CLASSI RITENUTE</div>
+    <div class="kpis" id="k-rwa"></div>
+    <div class="sec">COSTO DEL CAPITALE</div>
+    <div class="kpis" id="k-cost"></div>
+    <div class="sec">STRUTTURA DEL CAPITALE</div>
+    <div class="bar" id="bar"></div>
+    <div class="legend"><i style="background:#7a5200"></i>venduta al mercato<i style="background:#0d5a3a"></i>ritenuta (SEC-ERBA)</div>
+  </div>
+</div>
+
+<div class="panel" id="p-det">
+  <h2><span>DETTAGLIO PER CLASSE</span><span class="k">SEC-ERBA</span></h2>
+  <div class="body"><div class="tbl"><table id="det"></table></div></div>
+</div>
+
+<div class="panel" id="p-note">
+  <h2><span>NOTA METODOLOGICA</span><span class="k">NORMATIVA APPLICATA</span></h2>
+  <div class="body note">
+    <h3>1. RWA — normativa di riferimento</h3>
+    <ul>
+      <li><b>Reg. (UE) n. 575/2013 (CRR)</b>, Parte Tre, Titolo II, Capo 5 (artt. 242–270a), come modificato dal <b>Reg. (UE) 2017/2401</b> e dal <b>Reg. (UE) 2021/557</b>.</li>
+      <li><b>Art. 244</b> – significant risk transfer (cartolarizzazione tradizionale): si assume il trasferimento significativo del rischio riconosciuto. Il tool non verifica i test di SRT.</li>
+      <li><b>Art. 254</b> – gerarchia dei metodi: SEC-ERBA se la posizione ha rating esterno. Posizioni senza rating (o senza metodo applicabile): <b>1.250%</b> (art. 254 e artt. 261/263).</li>
+      <li><b>Art. 256</b> – attachment (A) e detachment (D) point, spessore T = D − A. <b>Art. 257</b> – scadenza della tranche MT, con floor 1 anno e cap 5 anni.</li>
+      <li><b>Art. 263</b> – SEC-ERBA, Tabella 2 (CQS 1–17): RW per senior / non-senior, interpolazione lineare tra 1 e 5 anni, per le non-senior fattore di spessore <code>[1 − min(T; 50%)]</code>, floor 15% e RW non inferiore a quello della tranche senior ipotetica con pari rating e scadenza.</li>
+      <li><b>Art. 264</b> – cartolarizzazioni STS: Tabella 4 con RW ridotti (floor 10% senior, 15% non-senior). Nel tool la tabella STS è applicata ai CQS 1–7; per i CQS ≥ 8 si usano in via prudenziale i RW non-STS.</li>
+      <li><b>Art. 268</b> – importo massimo: gli RWA delle posizioni ritenute dell'originator sono limitati agli RWA che l'attivo ceduto avrebbe generato.</li>
+      <li><b>Art. 6 Reg. (UE) 2017/2402</b> – retention del 5% (verifica indicativa nel tool); <b>artt. 18–22</b> per i requisiti STS.</li>
+      <li>Il metodo SEC-SA (art. 261) <b>non</b> è utilizzato: le posizioni ritenute sono ponderate con SEC-ERBA.</li>
+    </ul>
+    <h3>2. Formule</h3>
+    <ul>
+      <li>RWA ante = Portafoglio × RW medio (metodo standard, artt. 111–134 CRR) oppure importo inserito.</li>
+      <li>RW(tranche) = RW<sub>1y</sub> + (RW<sub>5y</sub> − RW<sub>1y</sub>) × (MT − 1)/4; non-senior: × [1 − min(T; 50%)].</li>
+      <li>RWA ritenuti = Σ (size × % ritenuta × RW) ≤ RWA ante (art. 268). <b>RWA liberati = RWA ante − RWA ritenuti.</b></li>
+      <li>Cedola = Euribor + spread (cedole a spread) oppure tasso fisso. Cedola media = Σ(size × cedola)/Σ size sui pesi: emesso (tutte le classi), venduto (size × (1 − % ritenuta)), ritenuto (size × % ritenuta). Nessun floor sull'Euribor.</li>
+    </ul>
+    <h3>3. Capitale e costo del capitale</h3>
+    <ul>
+      <li>Requisito di capitale: art. 92 CRR (8% RWA totale; 4,5% CET1), oltre a Pillar 2 e buffer (Dir. 2013/36/UE e Reg. (UE) n. 575/2013). Il <b>target CET1</b> inserito è usato come coefficiente di assorbimento di capitale.</li>
+      <li>Capitale assorbito dalle ritenute = RWA ritenuti × target CET1. Capitale liberato = RWA liberati × target CET1.</li>
+      <li><b>Costo del capitale con retention (€ mln annui)</b> = Σ(size venduta × cedola) + capitale assorbito dalle ritenute × Ke. Espresso in % sul totale emesso e sulle sole note vendute.</li>
+      <li><b>Costo atteso con vendita 100%</b> = valore inserito (o cedola media ponderata di tutte le classi se vuoto), applicato al totale emesso. Con vendita integrale non resta capitale assorbito da posizioni ritenute.</li>
+      <li>Costo cumulato indicativo = costo annuo × WAL. Con ammortamento pro-rata il saldo medio × vita equivale al nozionale iniziale × WAL.</li>
+    </ul>
+    <h3>4. Avvertenze</h3>
+    <ul>
+      <li>Strumento indicativo a fini di simulazione, non sostituisce il calcolo segnalativo né un parere regolamentare o legale. Verificare le tabelle RW sul testo vigente del CRR (inclusi gli aggiornamenti del Reg. (UE) 2024/1623, «CRR3») e le eventuali previsioni di Vigilanza.</li>
+      <li>Non modellati: SRT test (art. 244(2)), cap per CCF e posizioni fuori bilancio, tranche con rating a breve termine, rating inferiti (art. 263(7)), garanzie/funded credit protection, calcolo dell'Euribor forward.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>CREDITS &nbsp;·&nbsp; <b>CONTEMADE</b> &nbsp;·&nbsp; SRT COUPON &amp; RWA ANALYZER</footer>
+</div>
+
+<script>
+//CALC_START
+const CQS_N=17;
+const ERBA=[[15,20,15,70],[15,30,15,90],[25,40,30,120],[30,45,40,140],[40,50,60,160],[50,65,80,180],[60,70,120,210],[75,90,170,260],[90,105,220,310],[120,140,330,420],[140,160,470,580],[160,180,620,760],[200,225,750,860],[250,280,900,950],[310,340,1050,1050],[380,420,1250,1250],[460,505,1250,1250]];
+const STS_T=[[10,10,15,40],[10,15,15,55],[15,20,15,70],[15,25,25,80],[20,30,35,95],[30,40,60,135],[35,40,95,170]];
+function num(x){ if(typeof x==='number') return isFinite(x)?x:0; const v=parseFloat(String(x==null?'':x).replace(',','.')); return isFinite(v)?v:0; }
+function isBlank(x){ return x===''||x==null; }
+function rwErba(cqs,senior,mt,T,sts){
+  if(!cqs||cqs<1) return 1250;
+  const t=(sts&&cqs<=STS_T.length)?STS_T[cqs-1]:ERBA[cqs-1];
+  const w=(mt-1)/4;
+  const bs=t[0]+(t[1]-t[0])*w, bn=t[2]+(t[3]-t[2])*w;
+  const fl=sts?10:15;
+  let rw;
+  if(senior) rw=Math.max(bs,fl);
+  else rw=Math.max(bn*(1-Math.min(T,0.5)),15,Math.max(bs,fl));
+  return Math.min(rw,1250);
+}
+function groupKey(r,i){ const k=String(r.name||'').trim().toUpperCase().replace(/\d+$/,''); return k||('#'+i); }
+function compute(S){
+  const wal=Math.min(Math.max(num(S.wal)||3,0.01),50);
+  const eur=num(S.euribor), cet1=num(S.cet1)/100, ke=num(S.ke)/100;
+  const rows=S.rows.map((r,i)=>{
+    const size=S.sizeMode==='pct'?num(r.size)/100*num(S.totalIssued):num(r.size);
+    const cpn=r.cmode==='fixed'?num(r.coupon):eur+num(r.coupon)/100;
+    const ret=Math.min(Math.max(num(r.ret),0),100)/100;
+    const mt=Math.min(Math.max(isBlank(r.mt)?wal:num(r.mt),1),5);
+    return {id:r.id,name:r.name||('Classe '+(i+1)),g:groupKey(r,i),size,cpn,ret,mt,cqs:parseInt(r.cqs)||0,senior:!!r.senior};
+  });
+  const total=rows.reduce((a,r)=>a+r.size,0);
+  const gsize={}, gorder=[];
+  rows.forEach(r=>{ if(!(r.g in gsize)){gsize[r.g]=0;gorder.push(r.g);} gsize[r.g]+=r.size; });
+  const gAD={}; let above=0;
+  gorder.forEach(g=>{ const A=total>0?(total-above-gsize[g])/total:0; const T=total>0?gsize[g]/total:0; gAD[g]={A:Math.max(A,0),D:Math.max(A,0)+T,T}; above+=gsize[g]; });
+  rows.forEach(r=>{
+    const ad=gAD[r.g]; r.A=ad.A; r.D=ad.D; r.T=ad.T;
+    r.rw=rwErba(r.cqs,r.senior,r.mt,r.T,!!S.sts);
+    r.retAmt=r.size*r.ret; r.soldAmt=r.size-r.retAmt; r.rwaRet=r.retAmt*r.rw/100;
+  });
+  const sum=(f)=>rows.reduce((a,r)=>a+f(r),0);
+  const wavg=(wf)=>{ const w=sum(wf); return w>0?sum(r=>wf(r)*r.cpn)/w:NaN; };
+  const retTot=sum(r=>r.retAmt), soldTot=sum(r=>r.soldAmt);
+  const cpnAll=wavg(r=>r.size), cpnSold=wavg(r=>r.soldAmt), cpnRet=wavg(r=>r.retAmt);
+  const rwaPre=S.rwaMode==='direct'?num(S.rwaDirect):num(S.portfolio)*num(S.rw)/100;
+  const rwaRetRaw=sum(r=>r.rwaRet);
+  const capApplied=rwaPre>0&&rwaRetRaw>rwaPre;
+  const rwaRet=capApplied?rwaPre:rwaRetRaw;
+  const rwaFreed=rwaPre-rwaRet;
+  const capRet=rwaRet*cet1, capFreed=rwaFreed*cet1;
+  const c100=isBlank(S.c100)?cpnAll:num(S.c100);
+  const cost100=c100/100*total;
+  const soldCost=sum(r=>r.soldAmt*r.cpn/100);
+  const keCost=capRet*ke;
+  const costRet=soldCost+keCost;
+  return {rows,total,retTot,soldTot,cpnAll,cpnSold,cpnRet,rwaPre,rwaRetRaw,rwaRet,rwaFreed,capApplied,capRet,capFreed,
+    c100,cost100,soldCost,keCost,costRet,
+    costRetPctTot:total>0?costRet/total*100:NaN, costRetPctSold:soldTot>0?costRet/soldTot*100:NaN,
+    delta:costRet-cost100, costWal:costRet*wal, cost100Wal:cost100*wal, wal,
+    costPerCap:capFreed>0?costRet/capFreed*100:NaN, c100Auto:isBlank(S.c100)};
+}
+//CALC_END
+
+const SP=['AAA','AA+','AA','AA-','A+','A','A-','BBB+','BBB','BBB-','BB+','BB','BB-','B+','B','B-','CCC+ e inferiori'];
+const MD=['Aaa','Aa1','Aa2','Aa3','A1','A2','A3','Baa1','Baa2','Baa3','Ba1','Ba2','Ba3','B1','B2','B3','Caa1 e inferiori'];
+const KEY='contemade-srt-v1';
+let uid=1;
+function defaults(){
+  uid=1;
+  const mk=(name,size,cqs,cmode,coupon,ret,senior)=>({id:uid++,name,size,cqs,cmode,coupon,ret,senior,mt:''});
+  return {portfolio:1000,rwaMode:'rw',rw:75,rwaDirect:750,wal:3,euribor:2,cet1:10,ke:10,c100:'',scale:'sp',sizeMode:'mln',totalIssued:1000,sts:false,
+    rows:[mk('A1',450,1,'spread',90,5,true),mk('A2',340,3,'spread',130,5,true),mk('B',80,6,'spread',230,5,false),mk('C',50,9,'spread',420,5,false),mk('D',30,12,'spread',800,5,false),mk('J',50,0,'spread',1200,5,false)]};
+}
+let S=defaults();
+try{ const raw=localStorage.getItem(KEY); if(raw){ const p=JSON.parse(raw); if(p&&p.rows&&p.rows.length){S=p; uid=Math.max(...S.rows.map(r=>r.id))+1;} } }catch(e){}
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+
+let fmtN;
+try{ fmtN=d=>new Intl.NumberFormat('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d,useGrouping:'always'}); fmtN(2).format(1234.5);}
+catch(e){ fmtN=d=>new Intl.NumberFormat('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+const f=(n,d=2)=>isFinite(n)?fmtN(d).format(n):'n.d.';
+const pc=(n,d=2)=>isFinite(n)?f(n,d)+'%':'n.d.';
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const $=id=>document.getElementById(id);
+
+function ratingOpts(sel){
+  const L=S.scale==='md'?MD:SP;
+  let h='<option value="0"'+(sel==0?' selected':'')+'>NR (senza rating)</option>';
+  L.forEach((n,i)=>{h+='<option value="'+(i+1)+'"'+((i+1)==sel?' selected':'')+'>'+n+' (CQS '+(i+1)+')</option>';});
+  return h;
+}
+function buildRows(){
+  $('rows').innerHTML=S.rows.map((r,i)=>
+   '<tr data-id="'+r.id+'"><td>'+(i+1)+'</td>'+
+   '<td><input type="text" data-f="name" value="'+esc(r.name)+'" style="width:90px"></td>'+
+   '<td><input type="number" step="any" data-f="size" value="'+esc(r.size)+'" style="width:95px"></td>'+
+   '<td><select data-f="cqs" style="width:160px">'+ratingOpts(r.cqs)+'</select></td>'+
+   '<td><select data-f="cmode" style="width:120px"><option value="spread"'+(r.cmode==='spread'?' selected':'')+'>Spread (bps)</option><option value="fixed"'+(r.cmode==='fixed'?' selected':'')+'>Fisso (%)</option></select></td>'+
+   '<td><input type="number" step="any" data-f="coupon" value="'+esc(r.coupon)+'" style="width:85px"></td>'+
+   '<td><input type="number" step="any" min="0" max="100" data-f="ret" value="'+esc(r.ret)+'" style="width:75px"></td>'+
+   '<td style="text-align:center"><input type="checkbox" data-f="senior"'+(r.senior?' checked':'')+'></td>'+
+   '<td><input type="number" step="any" data-f="mt" value="'+esc(r.mt)+'" placeholder="WAL" style="width:70px"></td>'+
+   '<td style="white-space:nowrap"><button class="sm" data-a="up">▲</button> <button class="sm" data-a="dn">▼</button> <button class="sm x" data-a="del">✕</button></td></tr>').join('');
+}
+function syncGlobals(){
+  document.querySelectorAll('[data-k]').forEach(el=>{
+    const k=el.dataset.k;
+    if(el.type==='checkbox') el.checked=!!S[k]; else el.value=S[k];
+  });
+  $('f-rw').style.display=S.rwaMode==='rw'?'':'none';
+  $('f-rwad').style.display=S.rwaMode==='direct'?'':'none';
+  $('f-tot').style.display=S.sizeMode==='pct'?'':'none';
+  $('th-size').textContent=S.sizeMode==='pct'?'Size (% emesso)':'Size (€ mln)';
+}
+function kpi(l,v,s,cls){ return '<div class="kpi '+(cls||'')+'"><div class="l">'+l+'</div><div class="v">'+v+'</div><div class="s">'+(s||'')+'</div></div>'; }
+
+function render(){
+  const R=compute(S);
+  const w=[];
+  const sumPct=S.rows.reduce((a,r)=>a+num(r.size),0);
+  if(S.sizeMode==='pct'&&Math.abs(sumPct-100)>0.01) w.push(['warn','La somma delle size in % è '+f(sumPct,2)+'% (atteso 100%).']);
+  if(R.total<=0) w.push(['warn','Inserire almeno una classe con size &gt; 0.']);
+  if(R.total>0&&Math.abs(R.total-num(S.portfolio))>0.01) w.push(['info','Totale emesso '+f(R.total)+' mln diverso dal portafoglio ceduto ('+f(num(S.portfolio))+' mln): A/D e spessori sono calcolati sul totale emesso.']);
+  const retPct=R.total>0?R.retTot/R.total*100:0;
+  if(R.total>0){ if(retPct<5) w.push(['warn','Retention '+f(retPct)+'% inferiore al 5% richiesto (art. 6 Reg. UE 2017/2402).']); else w.push(['ok','Retention '+f(retPct)+'% ≥ 5% (art. 6 Reg. UE 2017/2402, verifica indicativa: la forma di retention ammessa va verificata).']); }
+  if(R.capApplied) w.push(['info','Applicato il cap art. 268 CRR: RWA ritenuti ('+f(R.rwaRetRaw)+' mln) limitati agli RWA ante ('+f(R.rwaPre)+' mln).']);
+  if(S.sts&&S.rows.some(r=>(parseInt(r.cqs)||0)>7)) w.push(['info','STS: per CQS ≥ 8 il tool applica i RW non-STS (prudenziale).']);
+  $('warns').innerHTML=w.map(x=>'<div class="'+x[0]+'">'+x[1]+'</div>').join('');
+
+  $('th-cpn').textContent='Cedola (bps / %)';
+  $('k-coupon').innerHTML=
+    kpi('Cedola media — classi emesse',pc(R.cpnAll),'Tot. emesso € '+f(R.total)+' mln','hl')+
+    kpi('Cedola media — classi vendute',pc(R.cpnSold),'Vendute € '+f(R.soldTot)+' mln ('+pc(R.total>0?R.soldTot/R.total*100:NaN)+')','hl')+
+    kpi('Cedola media — classi ritenute',pc(R.cpnRet),'Ritenute € '+f(R.retTot)+' mln ('+pc(retPct)+')')+
+    kpi('Euribor di riferimento',pc(num(S.euribor)),'WAL '+f(R.wal,2)+' anni · pro-rata');
+  $('k-rwa').innerHTML=
+    kpi('RWA ante cartolarizzazione','€ '+f(R.rwaPre)+' mln',S.rwaMode==='rw'?'RW medio '+pc(num(S.rw)):'Importo inserito')+
+    kpi('RWA classi ritenute (SEC-ERBA)','€ '+f(R.rwaRet)+' mln','RW medio ritenute '+pc(R.retTot>0?R.rwaRet/R.retTot*100:NaN)+(R.capApplied?' · cap art. 268':''))+
+    kpi('RWA liberati totali','€ '+f(R.rwaFreed)+' mln',pc(R.rwaPre>0?R.rwaFreed/R.rwaPre*100:NaN)+' degli RWA ante','hl')+
+    kpi('Capitale liberato (CET1 '+pc(num(S.cet1),1)+')','€ '+f(R.capFreed)+' mln','Assorbito dalle ritenute € '+f(R.capRet)+' mln');
+  const dCls=R.delta<=0?'pos':'neg';
+  $('k-cost').innerHTML=
+    kpi('Costo atteso — vendita 100% note',pc(R.c100),'€ '+f(R.cost100)+' mln/anno'+(R.c100Auto?' · auto (cedola media)':' · input'))+
+    kpi('Costo capitale con retention','<span style="color:#fff">'+pc(R.costRetPctTot)+'</span>','sul totale emesso · € '+f(R.costRet)+' mln/anno','hl')+
+    kpi('Costo con retention sulle sole vendute',pc(R.costRetPctSold),'Cedole vendute € '+f(R.soldCost)+' + Ke su capitale € '+f(R.keCost)+' mln')+
+    kpi('Δ vs vendita 100%','<span class="'+dCls+'">'+(R.delta>0?'+':'')+f(R.delta)+' mln/anno</span>','Cumulato su WAL: € '+f(R.costWal-R.cost100Wal)+' mln · Costo/capitale liberato '+pc(R.costPerCap));
+
+  // detail
+  let h='<thead><tr><th>Classe</th><th>Gruppo</th><th>Rating</th><th>Sr</th><th>A %</th><th>D %</th><th>T %</th><th>MT</th><th>RW %</th><th>Size €mln</th><th>% emesso</th><th>Ritenuta €mln</th><th>Venduta €mln</th><th>RWA rit. €mln</th><th>Cedola %</th></tr></thead><tbody>';
+  const L=S.scale==='md'?MD:SP;
+  R.rows.forEach(r=>{
+    h+='<tr><td>'+esc(r.name)+'</td><td>'+esc(r.g.replace('#','—'))+'</td><td>'+(r.cqs?L[r.cqs-1]:'NR')+'</td><td>'+(r.senior?'S':'')+'</td><td>'+f(r.A*100)+'</td><td>'+f(r.D*100)+'</td><td>'+f(r.T*100)+'</td><td>'+f(r.mt,2)+'</td><td>'+f(r.rw)+'</td><td>'+f(r.size)+'</td><td>'+f(R.total>0?r.size/R.total*100:NaN)+'</td><td>'+f(r.retAmt)+'</td><td>'+f(r.soldAmt)+'</td><td>'+f(r.rwaRet)+'</td><td>'+f(r.cpn)+'</td></tr>';
+  });
+  h+='<tr style="color:#fff;font-weight:700"><td>TOTALE</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>'+f(R.total)+'</td><td>100,00</td><td>'+f(R.retTot)+'</td><td>'+f(R.soldTot)+'</td><td>'+f(R.rwaRetRaw)+'</td><td>'+f(R.cpnAll)+'</td></tr></tbody>';
+  $('det').innerHTML=h;
+
+  // bar
+  $('bar').innerHTML=R.total>0?R.rows.map(r=>{
+    const wd=r.size/R.total*100;
+    return '<div class="sg" style="width:'+wd+'%" title="'+esc(r.name)+' · € '+f(r.size)+' mln · RW '+f(r.rw)+'%"><div class="n">'+esc(r.name)+' '+f(wd,1)+'%</div><div class="m"><div class="sold" style="flex:'+(1-r.ret)+'"></div><div class="ret" style="flex:'+r.ret+'"></div></div></div>';
+  }).join(''):'';
+  $('stamp').textContent='AGG. '+new Date().toLocaleTimeString('it-IT');
+}
+
+function rerender(full){ if(full){syncGlobals();buildRows();} render(); save(); }
+
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset&&el.dataset.k){
+    const k=el.dataset.k; S[k]=el.type==='checkbox'?el.checked:(el.tagName==='SELECT'||el.type==='text'?el.value:el.value);
+    if(el.tagName==='SELECT'){ rerender(true); } else render(), save();
+    return;
+  }
+  const tr=el.closest&&el.closest('#rows tr'); if(!tr) return;
+  const row=S.rows.find(r=>r.id==tr.dataset.id); if(!row) return;
+  const fld=el.dataset.f; row[fld]=el.type==='checkbox'?el.checked:el.value;
+  if(fld==='cmode'){ rerender(false); }
+  render(); save();
+});
+$('rows').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const tr=b.closest('tr'); const i=S.rows.findIndex(r=>r.id==tr.dataset.id);
+  if(b.dataset.a==='del'){ if(S.rows.length>1) S.rows.splice(i,1); }
+  else if(b.dataset.a==='up'&&i>0){ [S.rows[i-1],S.rows[i]]=[S.rows[i],S.rows[i-1]]; }
+  else if(b.dataset.a==='dn'&&i<S.rows.length-1){ [S.rows[i+1],S.rows[i]]=[S.rows[i],S.rows[i+1]]; }
+  rerender(true);
+});
+$('add').onclick=()=>{ S.rows.push({id:uid++,name:'Nuova',size:'',cqs:0,cmode:'spread',coupon:'',ret:0,senior:false,mt:''}); rerender(true); };
+$('reset').onclick=()=>{ if(confirm('Ripristinare i valori di esempio?')){ S=defaults(); rerender(true);} };
+function tick(){ $('clock').textContent=new Date().toLocaleString('it-IT',{dateStyle:'short',timeStyle:'medium'}); }
+tick(); setInterval(tick,1000);
+rerender(true);
+</script>
+</body>
+</html>
